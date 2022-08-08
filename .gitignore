@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+/yolo
+/YoloTest.ipynb
+/yolov5
+/yolov5s.pt
