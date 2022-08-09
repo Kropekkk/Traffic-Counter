@@ -12,6 +12,7 @@ class CarDetection:
         self.URL = url
         self.model = self.load_model()
         self.line = (490, 525),(675,580)
+        self.counter = 0
 
     def load_model(self):
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
@@ -54,12 +55,13 @@ class CarDetection:
             color = (0, 255, 0)
             x1, y1, x2, y2 = int(row[0]*width), int(row[1]*height), int(row[2]*width), int(row[3]*height)
             cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
-            cv2.putText(image, f"Total Cars crossed: {n}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            cv2.putText(image, f"Total Cars crossed: {self.counter}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             x,y = self.center(x1,y1,x2,y2)
             state = self.check_line(x,y)
-            cv2.line(image,self.line[0],self.line[1], color,1)
+            cv2.line(image,self.line[0],self.line[1], color,4)
 
             if state:
+                self.counter+=1
                 self.save(image)
 
         return image
