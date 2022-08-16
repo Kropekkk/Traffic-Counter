@@ -6,6 +6,7 @@ from vidgear.gears import CamGear
 import sys
 import os
 import uuid
+from sort.sort import *
 
 class CarDetection:
     def __init__(self,url):
@@ -13,6 +14,11 @@ class CarDetection:
         self.model = self.load_model()
         self.line = (490, 525),(675,580)
         self.counter = 0
+        self.tracker = self.load_tracker()
+
+    def load_tracker(self):
+        tracker = Sort()
+        return tracker
 
     def load_model(self):
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
@@ -50,20 +56,37 @@ class CarDetection:
     def draw(self,results, image):
         cars, cord = results
         width, height = image.shape[1], image.shape[0]
+        detSORT = np.empty((0,5))
         for i in range(len(cars)):
             row = cord[i]
             color = (0, 255, 0)
             x1, y1, x2, y2 = int(row[0]*width), int(row[1]*height), int(row[2]*width), int(row[3]*height)
-            cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
+            detSORT = np.vstack((detSORT, np.array([x1,y1,x2,y2,1])))
+            #cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
             cv2.putText(image, f"Total Cars crossed: {self.counter}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            
+            
+            cv2.line(image,self.line[0],self.line[1], color,4)
+            
+
+           
+
+        tracked = self.tracker.update(detSORT)
+        
+        for obj in tracked:  
+            element = obj.tolist()  
+            color = (0, 255, 0)
+            
+            cv2.rectangle(image, (int(element[0]), int(element[1])), (int(element[2]), int(element[3])), color, 1)
+            cv2.putText(image, str(element[4]), (int(element[0]),int(element[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
+            x1,y1,x2,y2 = int(element[0]), int(element[1]), int(element[2]), int(element[3])
             x,y = self.center(x1,y1,x2,y2)
             state = self.check_line(x,y)
-            cv2.line(image,self.line[0],self.line[1], color,4)
-
             if state:
                 self.counter+=1
                 self.save(image)
-
+            
+        
         return image
 
     def save(self, image):
