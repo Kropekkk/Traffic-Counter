@@ -6,7 +6,7 @@ from vidgear.gears import CamGear
 import sys
 import os
 import uuid
-from sort.sort import *
+from sort import *
 
 class CarDetection:
     def __init__(self,url):
@@ -62,15 +62,9 @@ class CarDetection:
             color = (0, 255, 0)
             x1, y1, x2, y2 = int(row[0]*width), int(row[1]*height), int(row[2]*width), int(row[3]*height)
             detSORT = np.vstack((detSORT, np.array([x1,y1,x2,y2,1])))
-            #cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
-            cv2.putText(image, f"Total Cars crossed: {self.counter}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            
-            
+            cv2.putText(image, f"Total Cars crossed: {self.counter}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)        
             cv2.line(image,self.line[0],self.line[1], color,4)
             
-
-           
-
         tracked = self.tracker.update(detSORT)
         
         for obj in tracked:  
