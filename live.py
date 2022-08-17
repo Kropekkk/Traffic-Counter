@@ -1,5 +1,4 @@
 import torch
-from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 from vidgear.gears import CamGear
@@ -15,6 +14,7 @@ class CarDetection:
         self.line = (490, 525),(675,580)
         self.counter = 0
         self.tracker = self.load_tracker()
+        self.cars_id = []
 
     def load_tracker(self):
         tracker = Sort()
@@ -40,47 +40,55 @@ class CarDetection:
                 pos.append(cord[i])
         return car, pos
 
+    def track(self, results, image):
+        cars, cord = results
+        detections = np.empty((0,5))
+        width, height = image.shape[1], image.shape[0]
+
+        for i in range(len(cars)):
+            row = cord[i]
+            x1, y1, x2, y2 = int(row[0]*width), int(row[1]*height), int(row[2]*width), int(row[3]*height)
+            detections = np.vstack((detections, np.array([x1,y1,x2,y2,1])))
+
+        trackers = self.tracker.update(detections)
+
+        return trackers
+        
     def center(self, x1,y1,x2,y2):
         x = (x1+x2)/2
         y = (y1+y2)/2
         return x,y
         
-    def check_line(self,x,y):
+    def check_car_position(self,x,y,id):
         xLine, yLine = self.line
         if x> xLine[0] and x < xLine[1]:
             if y < yLine[0] and y > yLine[1]:
+                if self.cars_id.__contains__(id):
+                    return False
+                    
+                self.cars_id.append(id)
+
                 return True
             
         return False
 
-    def draw(self,results, image):
-        cars, cord = results
-        width, height = image.shape[1], image.shape[0]
-        detSORT = np.empty((0,5))
-        for i in range(len(cars)):
-            row = cord[i]
-            color = (0, 255, 0)
-            x1, y1, x2, y2 = int(row[0]*width), int(row[1]*height), int(row[2]*width), int(row[3]*height)
-            detSORT = np.vstack((detSORT, np.array([x1,y1,x2,y2,1])))
-            cv2.putText(image, f"Total Cars crossed: {self.counter}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)        
-            cv2.line(image,self.line[0],self.line[1], color,4)
-            
-        tracked = self.tracker.update(detSORT)
+    def draw(self, image, trackers):
+        color = (0, 255, 0)
         
-        for obj in tracked:  
-            element = obj.tolist()  
-            color = (0, 255, 0)
-            
-            cv2.rectangle(image, (int(element[0]), int(element[1])), (int(element[2]), int(element[3])), color, 1)
-            cv2.putText(image, str(element[4]), (int(element[0]),int(element[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
-            x1,y1,x2,y2 = int(element[0]), int(element[1]), int(element[2]), int(element[3])
+        for obj in trackers:   
+            element = obj.tolist()
+            x1,y1,x2,y2,id = list(map(int, element))
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
+            cv2.putText(image, str(id), (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 1)
             x,y = self.center(x1,y1,x2,y2)
-            state = self.check_line(x,y)
+            state = self.check_car_position(x,y,id)
             if state:
                 self.counter+=1
                 self.save(image)
-            
-        
+
+        cv2.putText(image, f"Total Cars crossed: {self.counter}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)        
+        cv2.line(image,self.line[0],self.line[1], color,4)
+
         return image
 
     def save(self, image):
@@ -96,11 +104,12 @@ class CarDetection:
 
             if frame is None:
                 break
-
+ 
             results = self.detect(frame)
-            img = self.draw(results,frame)   
+            trackers = self.track(results, frame)
+            img = self.draw(frame, trackers)
 
-            cv2.imshow('YOLO', img)
+            cv2.imshow('Traffic Counter', img)
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
         cap.release()
