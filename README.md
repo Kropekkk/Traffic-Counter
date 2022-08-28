@@ -2,10 +2,10 @@
 
 Simple Real Time Car Detection app using feed from Youtube livestream to count vehicles.
 
-![RTcar](https://github.com/Kropekkk/Real-Time-Car-Detection/blob/main/RTcar.gif)
+![RTcar](https://github.com/Kropekkk/Traffic-Counter/blob/main/example.gif)
 
 ## Dependencies
-Simple Traffic COunter using [Yolov5](https://github.com/ultralytics/yolov5) and [SORT](https://github.com/abewley/sort) algorithm
+Simple Traffic Counter using [Yolov5](https://github.com/ultralytics/yolov5) and [SORT](https://github.com/abewley/sort) algorithm
 
 * Python 3.9.13
 * OpenCV
